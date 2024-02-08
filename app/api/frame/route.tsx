@@ -21,6 +21,18 @@ type TransferData = {
     };
 };
 
+interface TokenPricesQueryPayload {
+    query: string;
+    variables?: Record<string, any>;
+}
+
+
+const degenAddress = '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed'
+const nonfungiblePositionManager = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1'
+const swapRouter = '0x2626664c2603336E57B271c5C0b26F421741e481'
+const baseChainId = 8453
+
+// if from swapRouter -> buy. if to swapRouter -> sell (else transfer and 0 cost basis)
 
 async function getResponse(req: NextRequest): Promise<NextResponse> {
     // Step 2. Read the body from the Next Request
@@ -29,9 +41,6 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
     const { isValid, message } = await getFrameMessage(body , {
         neynarApiKey: process.env.NEYNAR_API_KEY,
     });
-
-    const degenAddress = '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed'
-    const nonfungiblePositionManager = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1'
 
     // Step 4. Determine the experience based on the validity of the message
     if (isValid) {
@@ -138,6 +147,14 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
             // Handle the sorted and filtered transfers
             console.log(allTransfers);
 
+            const timestamps = allTransfers.map(transfer => parseInt(transfer.blockNum, 16)); // Convert blockNum to timestamp if needed
+
+            // Fetch token prices
+            const pricesResponse = await fetchTokenPrices(timestamps);
+
+            // Handle the pricesResponse, e.g., log or process further
+            console.log(pricesResponse);
+
         } catch (error) {
             console.error("Request failed", error);
             // Respond with error message or code
@@ -160,6 +177,65 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
             post_url: 'https://build-onchain-apps.vercel.app/api/frame',
         }),
     );
+}
+
+type GetTokenPriceInput = {
+    address: string;
+    networkId: number;
+    timestamp?: number;
+};
+
+// Function to construct the GraphQL query for token prices
+function constructTokenPricesQuery(timestamps: number[]): TokenPricesQueryPayload {
+    // Construct the inputs array part of the query dynamically based on timestamps
+    const inputs: GetTokenPriceInput[] = timestamps.map((timestamp) => ({
+        address: degenAddress,
+        networkId: baseChainId,
+        timestamp: timestamp,
+    }));
+
+    inputs.push({
+        address: degenAddress,
+        networkId: baseChainId,
+    })
+
+    return {
+        query: `
+          query GetTokenPrices($inputs: [TokenPriceInput!]!) {
+            getTokenPrices(inputs: $inputs) {
+              priceUsd
+            }
+          }
+        `,
+        variables: {
+            inputs,
+        },
+    };
+}
+
+// Function to fetch token prices
+async function fetchTokenPrices(timestamps: number[]): Promise<any> {
+    const payload = constructTokenPricesQuery(timestamps);
+
+    try {
+        const response = await fetch('https://graph.defined.fi/graphql', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                "Authorization": process.env.DEFINED_API_KEY!
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Fetching token prices failed", error);
+        throw error; // Rethrow or handle as needed
+    }
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
