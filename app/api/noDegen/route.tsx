@@ -1,14 +1,6 @@
 import { ImageResponse } from '@vercel/og'
-import { NextRequest } from "next/server";
 
-type Params = {
-    params: {
-        value: string; // Assuming value is passed as a string query parameter
-    }
-}
-
-export async function GET(req: NextRequest, { params }: Params) {
-    const { value } = params;
+export async function GET() {
 
     // Define the options for the ImageResponse to set a custom aspect ratio
     const options = {
