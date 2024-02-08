@@ -282,6 +282,22 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
                 );
             }
 
+            if (+lostValue === 0) {
+                return new NextResponse(
+                    // Step 3. Use getFrameHtmlResponse to create a Frame response
+                    getFrameHtmlResponse({
+                        buttons: [
+                            {
+                                label: `Check DEGEN Performance`,
+                                action: 'post_redirect'
+                            },
+                        ],
+                        image:`https://degenpaperhands.xyz/api/diamondHands/${currentPortfolioValue}`,
+                        post_url: 'https://degenpaperhands.xyz/api/redirect',
+                    }),
+                );
+            }
+
             return new NextResponse(
                 // Step 3. Use getFrameHtmlResponse to create a Frame response
                 getFrameHtmlResponse({
