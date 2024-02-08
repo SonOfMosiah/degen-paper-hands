@@ -232,14 +232,14 @@ async function fetchTokenPrices(timestamps: number[]): Promise<any> {
             },
             body: JSON.stringify({
                 query: `
-                    query GetTokenPrices($inputs: [TokenPriceInput!]!) {
+                    query GetTokenPrices($inputs: [GetPriceInput!]!) {
                         getTokenPrices(inputs: $inputs) {
                             priceUsd
                         }
                     }
                 `,
                 variables: {
-                    inputs: inputs // Assuming 'inputs' is already defined in your scope
+                    inputs: inputs
                 }
             })
         });
