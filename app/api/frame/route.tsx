@@ -248,7 +248,10 @@ async function fetchTokenPrices(timestamps: number[]): Promise<any> {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        return await response.json();
+        const res = await response.json();
+        console.log('res:', res)
+
+        return res
     } catch (error) {
         console.error("Fetching token prices failed", error);
         throw error; // Rethrow or handle as needed
