@@ -127,7 +127,7 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
             if (!fromTransfersExcludingNFT) {
                 const latestPrice = await fetchLatestPrice()
                 const totalTokensReceived = toTransfers.reduce((acc: number, transfer: TransferData) => acc + transfer.value, 0);
-                const currentPortfolioValue = totalTokensReceived * latestPrice
+                const currentPortfolioValue = (totalTokensReceived * latestPrice).toFixed(2)
 
                 return new NextResponse(
                     // Step 3. Use getFrameHtmlResponse to create a Frame response
@@ -212,7 +212,7 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
             const totalBuyValue = allBuys.reduce((acc, currentValue) => acc + currentValue, 0);
 
             // todo: should include the cost basis of the tokens on buy and sell.
-            const lostValue = potentialPortfolioValue - currentPortfolioValue - totalSaleValue + totalBuyValue
+            const lostValue = (potentialPortfolioValue - currentPortfolioValue - totalSaleValue + totalBuyValue).toFixed(2)
 
             return new NextResponse(
                 // Step 3. Use getFrameHtmlResponse to create a Frame response
