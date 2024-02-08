@@ -1,6 +1,6 @@
 import { ImageResponse } from '@vercel/og'
 
-export default function () {
+export async function GET() {
     return new ImageResponse(
         (
             <div
