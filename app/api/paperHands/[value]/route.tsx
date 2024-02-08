@@ -1,5 +1,8 @@
 import { ImageResponse } from '@vercel/og'
 import { NextRequest } from "next/server";
+import {db} from "../../../../drizzle";
+import {users} from "../../../../drizzle/schema";
+import {eq} from "drizzle-orm";
 
 type Params = {
     params: {
@@ -9,6 +12,9 @@ type Params = {
 
 export async function GET(req: NextRequest, { params }: Params) {
     const { value } = params;
+
+    // todo: get fid
+    // const user = await db.select().from(users).where( eq(users.id, fid))
 
     // Define the options for the ImageResponse to set a custom aspect ratio
     const options = {
