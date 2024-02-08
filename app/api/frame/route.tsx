@@ -21,12 +21,6 @@ type TransferData = {
     };
 };
 
-interface TokenPricesQueryPayload {
-    query: string;
-    variables?: Record<string, any>;
-}
-
-
 const degenAddress = '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed'
 const nonfungiblePositionManager = '0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1'
 const swapRouter = '0x2626664c2603336E57B271c5C0b26F421741e481'
@@ -131,8 +125,25 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
             const fromTransfersExcludingNFT = fromTransfers.filter((transfer: TransferData) => transfer.to !== nonfungiblePositionManager)
 
             if (!fromTransfersExcludingNFT) {
+                const latestPrice = await fetchLatestPrice()
+                const totalTokensReceived = toTransfers.reduce((acc: number, transfer: TransferData) => acc + transfer.value, 0);
+                const potentialPortfolioValue = totalTokensReceived * latestPrice
                 // return image saying congratulations, you have not paper handed
-                // current degen holdings: ${user}
+                // current degen holdings: ${totalTokensReceived}
+                // current value: ${potentialPortfolioValue}
+
+                return new NextResponse(
+                    // Step 3. Use getFrameHtmlResponse to create a Frame response
+                    getFrameHtmlResponse({
+                        buttons: [
+                            {
+                                label: `How much did I paper hand?`,
+                            },
+                        ],
+                        image:'https://degenpaperhands.xyz/api/diamondHands',
+                        post_url: 'https://build-onchain-apps.vercel.app/api/frame',
+                    }),
+                );
             }
 
             // Assuming both toTransfersData and fromTransfersData have a result property that is an array of transfers
@@ -190,7 +201,7 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
                     label: `How much did I paper hand?`,
                 },
             ],
-            image:'https://build-onchain-apps.vercel.app/release/v-0-17.png',
+            image:'https://degenpaperhands.xyz/api/paperHands',
             post_url: 'https://build-onchain-apps.vercel.app/api/frame',
         }),
     );
@@ -217,6 +228,43 @@ function constructTokenPricesQuery(timestamps: number[]): GetTokenPriceInput[] {
     })
 
     return inputs
+}
+
+async function fetchLatestPrice(): Promise<number> {
+    try {
+        const response = await fetch('https://graph.defined.fi/graphql', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': process.env.DEFINED_API_KEY!
+            },
+            body: JSON.stringify({
+                query: `
+                    query GetTokenPrices($address: String!, $networkId: Int!) {
+                        getTokenPrices(inputs: [{address: $address, networkId: $networkId}]
+                            priceUsd
+                        }
+                    }
+                `,
+                variables: {
+                    address: degenAddress,
+                    networkId: baseChainId
+                }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const {data: {getTokenPrices: {priceUsd}}} = await response.json();
+        console.log('priceUsd:', priceUsd)
+
+        return priceUsd
+    } catch (error) {
+        console.error("Fetching token prices failed", error);
+        throw error; // Rethrow or handle as needed
+    }
 }
 
 // Function to fetch token prices
