@@ -10,9 +10,9 @@ export default function Home() {
         },
       ]}
       image="https://degenpaperhands.xyz/sad-paper-hands.png"
-      // input={{
-      //   text: 'Input your address here',
-      // }}
+      input={{
+        text: 'Input your address here',
+      }}
       post_url="https://degenpaperhands.xyz/api/frame"
   />
 );

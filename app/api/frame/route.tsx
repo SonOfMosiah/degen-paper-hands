@@ -3,6 +3,7 @@ import {FrameRequest, getFrameHtmlResponse, getFrameMessage} from '@coinbase/onc
 import { NextRequest, NextResponse } from 'next/server';
 import {db} from "../../../drizzle";
 import {users} from "../../../drizzle/schema";
+import {isAddress} from "viem";
 
 type TransferData = {
     blockNum: string;
@@ -40,12 +41,18 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
 
     // Step 4. Determine the experience based on the validity of the message
     if (isValid) {
-        const { interactor: { fid, verified_accounts } } = message
+        const { interactor: { fid, verified_accounts }, input } = message
+
+        let user = verified_accounts[0]
+        if (isAddress(input)) {
+            user = input
+        }
+
+        if (!user) {
+            throw new Error('User not found')
+        }
 
         // todo: loop through verified_accounts and check if the user has interacted with the contract
-
-        const user = verified_accounts[0]
-
         try {
             const toResponse = await fetch(`https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`, {
                 method: "POST",
@@ -147,20 +154,23 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
                 const totalTokensReceived = toTransfers.reduce((acc: number, transfer: TransferData) => acc + transfer.value, 0);
                 const currentPortfolioValue = (totalTokensReceived * latestPrice).toFixed(2)
 
-                await db.insert(users).values({
-                    id: Number(fid),
-                    valueLost: '0.00',
-                    currentPortfolioValue: String(currentPortfolioValue),
-                    potentialPortfolioValue: String(currentPortfolioValue),
-                    degenAmount: String(totalTokensReceived),
-                }).onConflictDoUpdate({ target: users.id,
-                    set: {
+                if (verified_accounts.includes(user)) {
+                    await db.insert(users).values({
+                        id: Number(fid),
                         valueLost: '0.00',
                         currentPortfolioValue: String(currentPortfolioValue),
                         potentialPortfolioValue: String(currentPortfolioValue),
                         degenAmount: String(totalTokensReceived),
-                    }
-                });
+                    }).onConflictDoUpdate({ target: users.id,
+                        set: {
+                            valueLost: '0.00',
+                            currentPortfolioValue: String(currentPortfolioValue),
+                            potentialPortfolioValue: String(currentPortfolioValue),
+                            degenAmount: String(totalTokensReceived),
+                        }
+                    });
+                }
+
 
                 return new NextResponse(
                     // Step 3. Use getFrameHtmlResponse to create a Frame response
@@ -249,20 +259,23 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
             // todo: should include the cost basis of the tokens on buy and sell.
             const lostValue = (potentialPortfolioValue - currentPortfolioValue - totalSaleValue + totalBuyValue).toFixed(2)
 
-            await db.insert(users).values({
-                id: Number(fid),
-                valueLost: lostValue,
-                currentPortfolioValue: String(currentPortfolioValue),
-                potentialPortfolioValue: String(potentialPortfolioValue),
-                degenAmount: String(totalTokensReceived - totalTokensSent),
-            }).onConflictDoUpdate({ target: users.id,
-                set: {
+            if (verified_accounts.includes(user)) {
+                await db.insert(users).values({
+                    id: Number(fid),
                     valueLost: lostValue,
                     currentPortfolioValue: String(currentPortfolioValue),
                     potentialPortfolioValue: String(potentialPortfolioValue),
                     degenAmount: String(totalTokensReceived - totalTokensSent),
-                }
-            });
+                }).onConflictDoUpdate({
+                    target: users.id,
+                    set: {
+                        valueLost: lostValue,
+                        currentPortfolioValue: String(currentPortfolioValue),
+                        potentialPortfolioValue: String(potentialPortfolioValue),
+                        degenAmount: String(totalTokensReceived - totalTokensSent),
+                    }
+                });
+            }
 
             // todo: create new state if lostValue is less than 0
 
