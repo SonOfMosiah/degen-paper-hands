@@ -9,7 +9,7 @@ export default function Home() {
           label: 'How much did I paper hand?',
         },
       ]}
-      image="https://zizzamia.xyz/park-1.png"
+      image="https://degen-paper-hands.vercel.app/degen-paper-hands.png"
       input={{
         text: 'How much did I paper hand?',
       }}
