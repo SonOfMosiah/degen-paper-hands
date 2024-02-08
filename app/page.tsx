@@ -11,7 +11,7 @@ export default function Home() {
       ]}
       image="https://degenpaperhands.xyz/sad-paper-hands.png"
       input={{
-        text: 'Input your address here (optional)',
+        text: 'Input your address here (leave blank to check your first connected address)',
       }}
       post_url="https://degenpaperhands.xyz/api/frame"
   />
