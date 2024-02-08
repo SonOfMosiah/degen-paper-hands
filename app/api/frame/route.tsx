@@ -1,6 +1,8 @@
 // Step 1. import getFrameMessage from @coinbase/onchainkit
 import {FrameRequest, getFrameHtmlResponse, getFrameMessage} from '@coinbase/onchainkit';
 import { NextRequest, NextResponse } from 'next/server';
+import {db} from "../../../drizzle";
+import {users} from "../../../drizzle/schema";
 
 type TransferData = {
     blockNum: string;
@@ -38,7 +40,7 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
 
     // Step 4. Determine the experience based on the validity of the message
     if (isValid) {
-        const { interactor: { verified_accounts } } = message
+        const { interactor: { fid, verified_accounts } } = message
 
         // todo: loop through verified_accounts and check if the user has interacted with the contract
 
@@ -119,6 +121,22 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
 
             const {result: {transfers: fromTransfers}} = await fromResponse.json();
 
+            if (!fromTransfers && !toTransfers) {
+                return new NextResponse(
+                    // Step 3. Use getFrameHtmlResponse to create a Frame response
+                    getFrameHtmlResponse({
+                        buttons: [
+                            {
+                                label: `Check DEGEN Performance`,
+                                action: 'post_redirect'
+                            },
+                        ],
+                        image:`https://degenpaperhands.xyz/api/noDegen`,
+                        post_url: 'https://degenpaperhands.xyz/api/redirect',
+                    }),
+                );
+            }
+
             // Handle your response data here
             console.log(fromTransfers);
 
@@ -129,18 +147,35 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
                 const totalTokensReceived = toTransfers.reduce((acc: number, transfer: TransferData) => acc + transfer.value, 0);
                 const currentPortfolioValue = (totalTokensReceived * latestPrice).toFixed(2)
 
+                await db.insert(users).values({
+                    id: Number(fid),
+                    valueLost: '0.00',
+                    currentPortfolioValue: String(currentPortfolioValue),
+                    potentialPortfolioValue: String(currentPortfolioValue),
+                    degenAmount: String(totalTokensReceived),
+                }).onConflictDoUpdate({ target: users.id,
+                    set: {
+                        valueLost: '0.00',
+                        currentPortfolioValue: String(currentPortfolioValue),
+                        potentialPortfolioValue: String(currentPortfolioValue),
+                        degenAmount: String(totalTokensReceived),
+                    }
+                });
+
                 return new NextResponse(
                     // Step 3. Use getFrameHtmlResponse to create a Frame response
                     getFrameHtmlResponse({
                         buttons: [
                             {
-                                label: `How much did I paper hand?`,
+                                label: `Check DEGEN Performance`,
+                                action: 'post_redirect'
                             },
                         ],
                         image:`https://degenpaperhands.xyz/api/diamondHands/${currentPortfolioValue}`,
-                        post_url: 'https://build-onchain-apps.vercel.app/api/frame',
+                        post_url: 'https://degenpaperhands.xyz/api/redirect',
                     }),
                 );
+
             }
 
             // Assuming both toTransfersData and fromTransfersData have a result property that is an array of transfers
@@ -214,16 +249,32 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
             // todo: should include the cost basis of the tokens on buy and sell.
             const lostValue = (potentialPortfolioValue - currentPortfolioValue - totalSaleValue + totalBuyValue).toFixed(2)
 
+            await db.insert(users).values({
+                id: Number(fid),
+                valueLost: lostValue,
+                currentPortfolioValue: String(currentPortfolioValue),
+                potentialPortfolioValue: String(potentialPortfolioValue),
+                degenAmount: String(totalTokensReceived - totalTokensSent),
+            }).onConflictDoUpdate({ target: users.id,
+                set: {
+                    valueLost: lostValue,
+                    currentPortfolioValue: String(currentPortfolioValue),
+                    potentialPortfolioValue: String(potentialPortfolioValue),
+                    degenAmount: String(totalTokensReceived - totalTokensSent),
+                }
+            });
+
             return new NextResponse(
                 // Step 3. Use getFrameHtmlResponse to create a Frame response
                 getFrameHtmlResponse({
                     buttons: [
                         {
-                            label: `How much did I paper hand?`,
+                            label: `Check DEGEN Performance`,
+                            action: 'post_redirect'
                         },
                     ],
                     image:`https://degenpaperhands.xyz/api/paperHands/${lostValue}`,
-                    post_url: 'https://build-onchain-apps.vercel.app/api/frame',
+                    post_url: 'https://degenpaperhands.xyz/api/redirect',
                 }),
             );
         } catch (error) {
