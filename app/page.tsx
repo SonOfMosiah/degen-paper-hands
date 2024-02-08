@@ -6,23 +6,14 @@ export default function Home() {
   <FrameMetadata
       buttons={[
         {
-          label: 'Tell me the story',
-        },
-        {
-          action: 'link',
-          label: 'Link to Google',
-          target: 'https://www.google.com'
-        },
-        {
-          action: 'post_redirect',
-          label: 'Redirect to cute pictures',
+          label: 'How much did I paper hand?',
         },
       ]}
       image="https://zizzamia.xyz/park-1.png"
       input={{
         text: 'How much did I paper hand?',
       }}
-      post_url="https://degenpaperhands.vercel.app/api/frame"
+      post_url="https://degen-paper-hands.vercel.app/api/frame"
   />
 );
 }
