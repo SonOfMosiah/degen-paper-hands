@@ -152,9 +152,24 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
             // Fetch token prices
             const pricesResponse = await fetchTokenPrices(timestamps);
 
-            // Handle the pricesResponse, e.g., log or process further
-            console.log(pricesResponse);
+            const pricesArray = pricesResponse.data.getTokenPrices.map((price: any) => price.priceUsd)
 
+            const latestPrice = pricesArray.pop()
+
+            console.log('pricesArray:', pricesArray)
+            console.log('latestPrice:', latestPrice)
+
+            const totalTokensReceived = toTransfers.reduce((acc: number, transfer: TransferData) => acc + transfer.value, 0);
+            const totalTokensSent = fromTransfers.reduce((acc: number, transfer: TransferData) => acc + transfer.value, 0);
+
+            console.log('totalTokensReceived:', totalTokensReceived)
+            console.log('totalTokensSent:', totalTokensSent)
+
+            const potentialPortfolioValue = totalTokensReceived * latestPrice
+            const currentPortfolioValue = (totalTokensReceived - totalTokensSent) * latestPrice
+            
+            console.log('potentialPortfolioValue:', potentialPortfolioValue)
+            console.log('currentPortfolioValue:', currentPortfolioValue)
         } catch (error) {
             console.error("Request failed", error);
             // Respond with error message or code
