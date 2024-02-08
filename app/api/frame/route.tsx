@@ -127,10 +127,7 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
             if (!fromTransfersExcludingNFT) {
                 const latestPrice = await fetchLatestPrice()
                 const totalTokensReceived = toTransfers.reduce((acc: number, transfer: TransferData) => acc + transfer.value, 0);
-                const potentialPortfolioValue = totalTokensReceived * latestPrice
-                // return image saying congratulations, you have not paper handed
-                // current degen holdings: ${totalTokensReceived}
-                // current value: ${potentialPortfolioValue}
+                const currentPortfolioValue = totalTokensReceived * latestPrice
 
                 return new NextResponse(
                     // Step 3. Use getFrameHtmlResponse to create a Frame response
@@ -140,7 +137,7 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
                                 label: `How much did I paper hand?`,
                             },
                         ],
-                        image:'https://degenpaperhands.xyz/api/diamondHands',
+                        image:`https://degenpaperhands.xyz/api/diamondHands/${currentPortfolioValue}`,
                         post_url: 'https://build-onchain-apps.vercel.app/api/frame',
                     }),
                 );
@@ -183,6 +180,52 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
 
             console.log('potentialPortfolioValue:', potentialPortfolioValue)
             console.log('currentPortfolioValue:', currentPortfolioValue)
+
+            // Step 1: Filter transfers to the swap router, but keep track of the original indices
+            const allSaleTransfers = allTransfers
+                .map((transfer, index) => ({ ...transfer, index })) // Append the original index to each transfer
+                .filter(transfer => transfer.to.toLowerCase() === swapRouter.toLowerCase());
+
+            // Step 2: Map over this filtered list to multiply values by the correct prices
+            const allSales = allSaleTransfers.map(transfer => {
+                const priceMultiplier = pricesArray[transfer.index]; // Access the correct price using the original index
+                return transfer.value * priceMultiplier;
+            });
+
+            // Step 3: Sum the multiplied values
+            const totalSaleValue = allSales.reduce((acc, currentValue) => acc + currentValue, 0);
+
+            console.log(totalSaleValue); // This is the total sum
+
+            // Step 1: Filter transfers to the swap router, but keep track of the original indices
+            const allBuyTransfers = allTransfers
+                .map((transfer, index) => ({ ...transfer, index })) // Append the original index to each transfer
+                .filter(transfer => transfer.from.toLowerCase() === swapRouter.toLowerCase());
+
+            // Step 2: Map over this filtered list to multiply values by the correct prices
+            const allBuys = allBuyTransfers.map(transfer => {
+                const priceMultiplier = pricesArray[transfer.index]; // Access the correct price using the original index
+                return transfer.value * priceMultiplier;
+            });
+
+            // Step 3: Sum the multiplied values
+            const totalBuyValue = allBuys.reduce((acc, currentValue) => acc + currentValue, 0);
+
+            // todo: should include the cost basis of the tokens on buy and sell.
+            const lostValue = potentialPortfolioValue - currentPortfolioValue - totalSaleValue + totalBuyValue
+
+            return new NextResponse(
+                // Step 3. Use getFrameHtmlResponse to create a Frame response
+                getFrameHtmlResponse({
+                    buttons: [
+                        {
+                            label: `How much did I paper hand?`,
+                        },
+                    ],
+                    image:`https://degenpaperhands.xyz/api/paperHands/${lostValue}`,
+                    post_url: 'https://build-onchain-apps.vercel.app/api/frame',
+                }),
+            );
         } catch (error) {
             console.error("Request failed", error);
             // Respond with error message or code
@@ -192,19 +235,6 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
         // sorry, the message is not valid and it will be undefined
         return NextResponse.json('Internal Server Error', {status: 500})
     }
-
-    return new NextResponse(
-        // Step 3. Use getFrameHtmlResponse to create a Frame response
-        getFrameHtmlResponse({
-            buttons: [
-                {
-                    label: `How much did I paper hand?`,
-                },
-            ],
-            image:'https://degenpaperhands.xyz/api/paperHands',
-            post_url: 'https://build-onchain-apps.vercel.app/api/frame',
-        }),
-    );
 }
 
 type GetTokenPriceInput = {
