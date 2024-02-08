@@ -9,11 +9,11 @@ export default function Home() {
           label: 'How much did I paper hand?',
         },
       ]}
-      image="https://degen-paper-hands.vercel.app/degen-paper-hands.png"
+      image="https://degenpaperhands.xyz/degen-paper-hands.png"
       // input={{
-      //   text: 'Input your address hereh',
+      //   text: 'Input your address here',
       // }}
-      post_url="https://degen-paper-hands.vercel.app/api/frame"
+      post_url="https://degenpaperhands.xyz/api/frame"
   />
 );
 }

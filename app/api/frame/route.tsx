@@ -149,6 +149,8 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
 
             const timestamps = await Promise.all(allTransfers.map(async transfer => await fetchBlockTimestamp(transfer.blockNum))); // Convert blockNum to timestamp if needed
 
+            console.log('timestamps:', timestamps)
+
             // Fetch token prices
             const pricesResponse = await fetchTokenPrices(timestamps);
 
@@ -167,7 +169,7 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
 
             const potentialPortfolioValue = totalTokensReceived * latestPrice
             const currentPortfolioValue = (totalTokensReceived - totalTokensSent) * latestPrice
-            
+
             console.log('potentialPortfolioValue:', potentialPortfolioValue)
             console.log('currentPortfolioValue:', currentPortfolioValue)
         } catch (error) {
@@ -231,6 +233,8 @@ function constructTokenPricesQuery(timestamps: number[]): TokenPricesQueryPayloa
 // Function to fetch token prices
 async function fetchTokenPrices(timestamps: number[]): Promise<any> {
     const payload = constructTokenPricesQuery(timestamps);
+
+    console.log('payload:', payload)
 
     try {
         const response = await fetch('https://graph.defined.fi/graphql', {
