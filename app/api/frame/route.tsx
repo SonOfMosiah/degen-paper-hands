@@ -147,7 +147,7 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
             // Handle the sorted and filtered transfers
             console.log(allTransfers);
 
-            const timestamps = allTransfers.map(transfer => parseInt(transfer.blockNum, 16)); // Convert blockNum to timestamp if needed
+            const timestamps = await Promise.all(allTransfers.map(async transfer => await fetchBlockTimestamp(transfer.blockNum))); // Convert blockNum to timestamp if needed
 
             // Fetch token prices
             const pricesResponse = await fetchTokenPrices(timestamps);
@@ -235,6 +235,35 @@ async function fetchTokenPrices(timestamps: number[]): Promise<any> {
     } catch (error) {
         console.error("Fetching token prices failed", error);
         throw error; // Rethrow or handle as needed
+    }
+}
+
+async function fetchBlockTimestamp(blockNum: string): Promise<number> {
+    const options = {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            id: 1,
+            jsonrpc: '2.0',
+            method: 'eth_getBlockByNumber',
+            params: [blockNum, false]
+        })
+    };
+
+    try {
+        const response = await fetch(`https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`, options);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        const timestampHex = data.result.timestamp;
+        return parseInt(timestampHex, 16); // Convert hex timestamp to number
+    } catch (err) {
+        console.error(err);
+        throw new Error('Failed to fetch block timestamp');
     }
 }
 
