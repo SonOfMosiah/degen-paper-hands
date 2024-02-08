@@ -2,6 +2,26 @@
 import {FrameRequest, getFrameHtmlResponse, getFrameMessage} from '@coinbase/onchainkit';
 import { NextRequest, NextResponse } from 'next/server';
 
+type TransferData = {
+    blockNum: string;
+    uniqueId: string;
+    hash: string;
+    from: string;
+    to: string;
+    value: number;
+    erc721TokenId: string | null;
+    erc1155Metadata: any | null; // Use 'any' if the structure is unknown or dynamic; otherwise, replace 'any' with a more specific type
+    tokenId: string | null;
+    asset: string;
+    category: "erc20" | string; // Use a union type if there are a limited number of categories; otherwise, use 'string'
+    rawContract: {
+        value: string;
+        address: string;
+        decimal: string;
+    };
+};
+
+
 async function getResponse(req: NextRequest): Promise<NextResponse> {
     // Step 2. Read the body from the Next Request
     const body: FrameRequest = await req.json();
@@ -56,7 +76,7 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
                 throw new Error(`HTTP error! status: ${toResponse.status}`);
             }
 
-            const toTransfers = await toResponse.json();
+            const {result: {transfers: toTransfers}} = await toResponse.json();
             // Handle your response data here
             console.log(toTransfers);
 
@@ -94,11 +114,12 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
                 throw new Error(`HTTP error! status: ${fromResponse.status}`);
             }
 
-            const fromTransfers = await fromResponse.json();
+            const {result: {transfers: fromTransfers}} = await fromResponse.json();
+
             // Handle your response data here
             console.log(fromTransfers);
 
-            const fromTransfersExcludingNFT = fromTransfers.result.filter((transfer: any) => transfer.to !== nonfungiblePositionManager)
+            const fromTransfersExcludingNFT = fromTransfers.filter((transfer: TransferData) => transfer.to !== nonfungiblePositionManager)
 
             if (!fromTransfersExcludingNFT) {
                 // return image saying congratulations, you have not paper handed
@@ -106,13 +127,13 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
             }
 
             // Assuming both toTransfersData and fromTransfersData have a result property that is an array of transfers
-            let allTransfers = [...toTransfers.result, ...fromTransfers.result];
+            let allTransfers: TransferData[] = [...toTransfers, ...fromTransfers];
 
             // Exclude transfers to or from nonfungiblePositionManager
-            allTransfers = allTransfers.filter((transfer: any) => transfer.to !== nonfungiblePositionManager && transfer.from !== nonfungiblePositionManager);
+            allTransfers = allTransfers.filter((transfer) => transfer.to !== nonfungiblePositionManager && transfer.from !== nonfungiblePositionManager);
 
             // Sort by blockNum - assuming blockNum is a hex string, convert it to a number for comparison
-            allTransfers.sort((a: any, b: any) => parseInt(a.blockNum, 16) - parseInt(b.blockNum, 16));
+            allTransfers.sort((a, b) => parseInt(a.blockNum, 16) - parseInt(b.blockNum, 16));
 
             // Handle the sorted and filtered transfers
             console.log(allTransfers);

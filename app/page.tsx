@@ -10,9 +10,9 @@ export default function Home() {
         },
       ]}
       image="https://degen-paper-hands.vercel.app/degen-paper-hands.png"
-      input={{
-        text: 'How much did I paper hand?',
-      }}
+      // input={{
+      //   text: 'Input your address hereh',
+      // }}
       post_url="https://degen-paper-hands.vercel.app/api/frame"
   />
 );
