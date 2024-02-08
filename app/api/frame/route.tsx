@@ -264,6 +264,24 @@ async function getResponse(req: NextRequest): Promise<NextResponse> {
                 }
             });
 
+            // todo: create new state if lostValue is less than 0
+
+            if (+lostValue < 0) {
+                return new NextResponse(
+                    // Step 3. Use getFrameHtmlResponse to create a Frame response
+                    getFrameHtmlResponse({
+                        buttons: [
+                            {
+                                label: `Check DEGEN Performance`,
+                                action: 'post_redirect'
+                            },
+                        ],
+                        image:`https://degenpaperhands.xyz/api/paperHands/${lostValue}/increase`,
+                        post_url: 'https://degenpaperhands.xyz/api/redirect',
+                    }),
+                );
+            }
+
             return new NextResponse(
                 // Step 3. Use getFrameHtmlResponse to create a Frame response
                 getFrameHtmlResponse({
