@@ -9,7 +9,7 @@ export default function Home() {
           label: 'How much did I paper hand?',
         },
       ]}
-      image="https://degenpaperhands.xyz/degens.png"
+      image="https://degenpaperhands.xyz/sad-paper-hands.png"
       // input={{
       //   text: 'Input your address here',
       // }}
