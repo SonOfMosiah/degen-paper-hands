@@ -203,7 +203,7 @@ type GetTokenPriceInput = {
 };
 
 // Function to construct the GraphQL query for token prices
-function constructTokenPricesQuery(timestamps: number[]): TokenPricesQueryPayload {
+function constructTokenPricesQuery(timestamps: number[]): GetTokenPriceInput[] {
     // Construct the inputs array part of the query dynamically based on timestamps
     const inputs: GetTokenPriceInput[] = timestamps.map((timestamp) => ({
         address: degenAddress,
@@ -216,34 +216,32 @@ function constructTokenPricesQuery(timestamps: number[]): TokenPricesQueryPayloa
         networkId: baseChainId,
     })
 
-    return {
-        query: `
-          query GetTokenPrices($inputs: [TokenPriceInput!]!) {
-            getTokenPrices(inputs: $inputs) {
-              priceUsd
-            }
-          }
-        `,
-        variables: {
-            inputs,
-        },
-    };
+    return inputs
 }
 
 // Function to fetch token prices
 async function fetchTokenPrices(timestamps: number[]): Promise<any> {
-    const payload = constructTokenPricesQuery(timestamps);
-
-    console.log('payload:', payload)
+    const inputs = constructTokenPricesQuery(timestamps);
 
     try {
         const response = await fetch('https://graph.defined.fi/graphql', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                "Authorization": process.env.DEFINED_API_KEY!
+                'Authorization': `Bearer ${process.env.DEFINED_API_KEY}`
             },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({
+                query: `
+            query GetTokenPrices($inputs: [TokenPriceInput!]!) {
+                getTokenPrices(inputs: $inputs) {
+                    priceUsd
+                }
+            }
+        `,
+                variables: {
+                    inputs: inputs // Assuming 'inputs' is already defined in your scope
+                }
+            })
         });
 
         if (!response.ok) {
