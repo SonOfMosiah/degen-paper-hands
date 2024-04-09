@@ -16,6 +16,7 @@
     "@vercel/og": "^0.6.2",
     "@vercel/postgres": "^0.7.2",
     "drizzle-orm": "^0.29.3",
+    "frog": "^0.8.1",
     "next": "14.1.0",
     "react": "^18",
     "react-dom": "^18"
