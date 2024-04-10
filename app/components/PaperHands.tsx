@@ -1,10 +1,14 @@
 /** @jsxImportSource frog/jsx */
 import { Box, Heading, VStack, Text } from './ui'
 
-export const NoDegen = ({
+export const PaperHands = ({
+    valueLost,
     account,
+    numAddresses,
 }: {
+    valueLost: string
     account: string
+    numAddresses?: number | undefined
 }) => {
     return (
         <Box
@@ -16,15 +20,16 @@ export const NoDegen = ({
             width="100%"
         >
             <VStack gap="4">
-                <Heading size="20" alignHorizontal="center">
-                    {"Looks like you're not a degen"}
-                </Heading>
-                <Text color="text200" size="15">
-                    {'Your account has never held degen tokens.'}
-                </Text>
+                <Heading>Paper Hands 😭</Heading>
+                <Text>Value Lost: ${valueLost}</Text>
                 <Text color="text200" size="15">
                     {`Account: ${account}`}
                 </Text>
+                {numAddresses ? (
+                    <Text color="text200" size="15">
+                        {`# of addresses checked: ${numAddresses}`}
+                    </Text>
+                ) : null}
             </VStack>
         </Box>
     )

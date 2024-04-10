@@ -1,4 +1,4 @@
-import type { Config } from 'drizzle-kit';
+import type { Config } from 'drizzle-kit'
 
 export default {
     schema: './drizzle/schema.ts',
@@ -10,4 +10,4 @@ export default {
         password: process.env.PG_PASSWORD,
         database: process.env.PG_DATABASE!,
     },
-} satisfies Config;
+} satisfies Config

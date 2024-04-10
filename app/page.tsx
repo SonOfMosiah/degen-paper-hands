@@ -1,19 +1,19 @@
-import Image from "next/image";
-import {FrameMetadata} from "@coinbase/onchainkit";
+import Image from 'next/image'
+import { FrameMetadata } from '@coinbase/onchainkit'
 
 export default function Home() {
-  return (
-  <FrameMetadata
-      buttons={[
-        {
-          label: 'How much did I paper hand?',
-        },
-      ]}
-      image="https://degenpaperhands.xyz/sad-paper-hands.png"
-      input={{
-        text: 'Input your address here (leave blank to check your first connected address)',
-      }}
-      post_url="https://degenpaperhands.xyz/api/frame"
-  />
-);
+    return (
+        <FrameMetadata
+            buttons={[
+                {
+                    label: 'How much did I paper hand?',
+                },
+            ]}
+            image="https://degenpaperhands.xyz/sad-paper-hands.png"
+            input={{
+                text: 'Input your address here (leave blank to check your first connected address)',
+            }}
+            post_url="https://degenpaperhands.xyz/api/frame"
+        />
+    )
 }
